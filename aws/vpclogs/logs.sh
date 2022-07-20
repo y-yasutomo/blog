@@ -12,13 +12,17 @@ aws logs put-retention-policy \
     --retention-in-days 1
 
 # create flow-logs
+ROLE_ARN=$(aws iam list-roles \
+    --query "Roles[?RoleName == 'VpcFowlogsRole'].Arn" \
+    --output text) && echo ${ROLE_ARN}
+
 ENI_ID=$(aws ec2 describe-instances \
     --filters "Name=tag:Name,Values=${PREFIX}-instance" \
     --query "Reservations[].Instances[].NetworkInterfaces[].NetworkInterfaceId" \
     --output text) && echo ${ENI_ID}
 
 aws ec2 create-flow-logs \
-    --deliver-logs-permission-arn "arn:aws:iam::447463391128:role/VpcFowlogsRole" \
+    --deliver-logs-permission-arn ${ROLE_ARN} \
     --log-group-name "flow-logs" \
     --resource-ids ${ENI_ID} \
     --resource-type "NetworkInterface" \
@@ -28,7 +32,7 @@ aws ec2 create-flow-logs \
 
 # log format
 aws ec2 create-flow-logs \
-    --deliver-logs-permission-arn "arn:aws:iam::447463391128:role/VpcFowlogsRole" \
+    --deliver-logs-permission-arn ${ROLE_ARN} \
     --log-group-name "flow-logs" \
     --resource-ids ${ENI_ID} \
     --resource-type "NetworkInterface" \
